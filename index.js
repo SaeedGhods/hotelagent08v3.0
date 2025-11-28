@@ -21,14 +21,14 @@ app.post('/voice', async (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
 
   try {
-    // Generate ElevenLabs audio for greeting - friendly and welcoming
-    const greetingAudioId = await elevenlabsService.generateSpeech('Hi, this is Saeed. How can I help you?');
+    // Generate ElevenLabs audio for greeting - professional and welcoming
+    const greetingAudioId = await elevenlabsService.generateSpeech('Hello, this is Saeed. How can I help you?');
     if (greetingAudioId) {
       const greetingUrl = `${req.protocol}://${req.get('host')}/audio/${greetingAudioId}`;
       twiml.play(greetingUrl);
     } else {
       // Fallback to Twilio TTS
-      twiml.say('Hi, this is Saeed. How can I help you?');
+      twiml.say('Hello, this is Saeed. How can I help you?');
     }
 
     // Gather speech input naturally
@@ -46,8 +46,8 @@ app.post('/voice', async (req, res) => {
 
   } catch (error) {
     console.error('Error in voice endpoint:', error);
-    // Fallback - keep it friendly
-    twiml.say('Hi, this is Saeed. How can I help you?');
+    // Fallback - keep it professional
+    twiml.say('Hello, this is Saeed. How can I help you?');
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
