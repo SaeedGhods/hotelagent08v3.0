@@ -21,51 +21,36 @@ app.post('/voice', async (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
 
   try {
-    // Generate ElevenLabs audio for greeting
-    const greetingAudioId = await elevenlabsService.generateSpeech('Hello! Connecting you to our AI assistant...');
+    // Generate ElevenLabs audio for greeting - make it personal and natural
+    const greetingAudioId = await elevenlabsService.generateSpeech('Hey, this is Saeed. What\'s up?');
     if (greetingAudioId) {
       const greetingUrl = `${req.protocol}://${req.get('host')}/audio/${greetingAudioId}`;
       twiml.play(greetingUrl);
     } else {
       // Fallback to Twilio TTS
-      twiml.say('Hello! Connecting you to our AI assistant...');
+      twiml.say('Hey, this is Saeed. What\'s up?');
     }
 
-    // For now, we'll use a simple gathering to collect speech
+    // Gather speech input naturally
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 3,
+      timeout: 5,
       speechTimeout: 'auto'
     });
 
-    // Generate ElevenLabs audio for instructions
-    const promptAudioId = await elevenlabsService.generateSpeech('Please speak.');
-    if (promptAudioId) {
-      const promptUrl = `${req.protocol}://${req.get('host')}/audio/${promptAudioId}`;
-      gather.play(promptUrl);
-    } else {
-      // Fallback to Twilio TTS
-      gather.say('Please speak.');
-    }
-
-    // If no speech detected, end call
-    twiml.say('We didn\'t hear anything. Goodbye!');
-    twiml.hangup();
+    // No additional prompts needed - keep it natural
 
   } catch (error) {
     console.error('Error in voice endpoint:', error);
-    // Fallback to all Twilio TTS
-    twiml.say('Hello! Connecting you to our AI assistant...');
+    // Fallback - keep it personal
+    twiml.say('Hey, this is Saeed. What\'s up?');
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 3,
+      timeout: 5,
       speechTimeout: 'auto'
     });
-    gather.say('Please speak your message after the beep.');
-    twiml.say('We didn\'t hear anything. Goodbye!');
-    twiml.hangup();
   }
 
   res.type('text/xml');
@@ -106,31 +91,36 @@ app.post('/process-speech', async (req, res) => {
       twiml.say(fallbackText);
     }
 
-    // Continue the conversation
+    // Continue the conversation naturally
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 3,
+      timeout: 5,
       speechTimeout: 'auto'
     });
 
-    // Generate ElevenLabs audio for simple follow-up prompt
-    const followUpAudioId = await elevenlabsService.generateSpeech('Go ahead.');
-    if (followUpAudioId) {
-      const followUpUrl = `${req.protocol}://${req.get('host')}/audio/${followUpAudioId}`;
-      gather.play(followUpUrl);
-    } else {
-      // Fallback to Twilio TTS
-      gather.say('Go ahead.');
-    }
+    // Keep conversation natural - no prompts needed
 
   } catch (error) {
     console.error('Error processing speech:', error);
-    twiml.say('I apologize, but I\'m having technical difficulties. Please try calling back later.');
+    // Keep error message natural and personal
+    const errorAudioId = await elevenlabsService.generateSpeech('Sorry, I didn\'t catch that. Can you say that again?');
+    if (errorAudioId) {
+      const errorUrl = `${req.protocol}://${req.get('host')}/audio/${errorAudioId}`;
+      twiml.play(errorUrl);
+    } else {
+      twiml.say('Sorry, I didn\'t catch that. Can you say that again?');
+    }
+
+    const gather = twiml.gather({
+      input: 'speech',
+      action: '/process-speech',
+      timeout: 5,
+      speechTimeout: 'auto'
+    });
   }
 
-  twiml.say('Thank you for calling. Goodbye!');
-  twiml.hangup();
+  // No formal goodbye - let conversations end naturally
 
   res.type('text/xml');
   res.send(twiml.toString());
