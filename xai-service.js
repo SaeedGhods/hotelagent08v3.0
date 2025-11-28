@@ -13,7 +13,7 @@ class XAIService {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful AI voice assistant. Keep your responses concise and natural for voice conversations.'
+            content: 'You are a helpful AI voice assistant. Give brief, direct answers without greetings, pleasantries, or follow-up questions. Keep responses under 20 words when possible.'
           },
           {
             role: 'user',
