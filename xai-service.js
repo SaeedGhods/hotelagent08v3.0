@@ -13,14 +13,14 @@ class XAIService {
         messages: [
           {
             role: 'system',
-            content: 'You are Saeed having a casual conversation. Respond naturally like a regular person would in a phone call. Be friendly, conversational, and keep responses brief but engaging. Don\'t mention being AI or an assistant.'
+            content: 'You are Saeed having a casual conversation. Respond naturally like a regular person would in a phone call. Be friendly, conversational, and keep responses very brief (1-2 sentences max) for natural flow. Don\'t mention being AI or an assistant. Give immediate, direct responses.'
           },
           {
             role: 'user',
             content: message
           }
         ],
-        max_tokens: 150,
+        max_tokens: 100,
         temperature: 0.7
       }, {
         headers: {

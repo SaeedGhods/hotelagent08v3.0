@@ -71,11 +71,14 @@ app.post('/process-speech', async (req, res) => {
     let audioUrl = null;
 
     if (speechResult) {
-      // Get AI response from xAI
-      const aiResponse = await xaiService.generateResponse(speechResult);
+      // Start xAI response generation
+      const aiResponsePromise = xaiService.generateResponse(speechResult);
+
+      // While xAI is processing, we can start preparing for audio generation
+      const aiResponse = await aiResponsePromise;
 
       if (aiResponse) {
-        // Generate audio with ElevenLabs
+        // Generate audio with ElevenLabs (this is the main bottleneck now)
         const audioId = await elevenlabsService.generateSpeech(aiResponse);
         if (audioId) {
           audioUrl = `${req.protocol}://${req.get('host')}/audio/${audioId}`;
