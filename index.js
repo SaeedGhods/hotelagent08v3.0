@@ -1,6 +1,7 @@
 const express = require('express');
 const twilio = require('twilio');
 const xaiService = require('./xai-service');
+const elevenlabsService = require('./elevenlabs-service');
 require('dotenv').config();
 
 const app = express();
@@ -16,31 +17,55 @@ app.get('/', (req, res) => {
 });
 
 // TwiML endpoint for handling incoming calls
-app.post('/voice', (req, res) => {
+app.post('/voice', async (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
 
-  // Connect to xAI voice agent
-  twiml.say('Hello! Connecting you to our AI assistant...');
+  try {
+    // Generate ElevenLabs audio for greeting
+    const greetingAudioId = await elevenlabsService.generateSpeech('Hello! Connecting you to our AI assistant...');
+    if (greetingAudioId) {
+      const greetingUrl = `${req.protocol}://${req.get('host')}/audio/${greetingAudioId}`;
+      twiml.play(greetingUrl);
+    } else {
+      // Fallback to Twilio TTS
+      twiml.say('Hello! Connecting you to our AI assistant...');
+    }
 
-  // For now, we'll use a simple gathering to collect speech
-  const gather = twiml.gather({
-    input: 'speech',
-    action: '/process-speech',
-    timeout: 3,
-    speechTimeout: 'auto'
-  });
+    // For now, we'll use a simple gathering to collect speech
+    const gather = twiml.gather({
+      input: 'speech',
+      action: '/process-speech',
+      timeout: 3,
+      speechTimeout: 'auto'
+    });
 
-  gather.say('Please speak your message after the beep.');
+    // Use Twilio TTS for instructions (clearer for prompts)
+    gather.say('Please speak your message after the beep.');
 
-  // If no speech detected, end call
-  twiml.say('We didn\'t hear anything. Goodbye!');
-  twiml.hangup();
+    // If no speech detected, end call
+    twiml.say('We didn\'t hear anything. Goodbye!');
+    twiml.hangup();
+
+  } catch (error) {
+    console.error('Error in voice endpoint:', error);
+    // Fallback to all Twilio TTS
+    twiml.say('Hello! Connecting you to our AI assistant...');
+    const gather = twiml.gather({
+      input: 'speech',
+      action: '/process-speech',
+      timeout: 3,
+      speechTimeout: 'auto'
+    });
+    gather.say('Please speak your message after the beep.');
+    twiml.say('We didn\'t hear anything. Goodbye!');
+    twiml.hangup();
+  }
 
   res.type('text/xml');
   res.send(twiml.toString());
 });
 
-// Process speech input with xAI
+// Process speech input with xAI and ElevenLabs
 app.post('/process-speech', async (req, res) => {
   const speechResult = req.body.SpeechResult;
   console.log('Speech received:', speechResult);
@@ -48,14 +73,30 @@ app.post('/process-speech', async (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
 
   try {
+    let audioUrl = null;
+
     if (speechResult) {
       // Get AI response from xAI
       const aiResponse = await xaiService.generateResponse(speechResult);
 
-      // Speak the AI response
-      twiml.say(aiResponse);
+      if (aiResponse) {
+        // Generate audio with ElevenLabs
+        const audioId = await elevenlabsService.generateSpeech(aiResponse);
+        if (audioId) {
+          audioUrl = `${req.protocol}://${req.get('host')}/audio/${audioId}`;
+        }
+      }
+    }
+
+    if (audioUrl) {
+      // Play the ElevenLabs audio
+      twiml.play(audioUrl);
     } else {
-      twiml.say('I didn\'t catch that. Could you please repeat?');
+      // Fallback to Twilio TTS if ElevenLabs fails
+      const fallbackText = speechResult ?
+        'I apologize, but I\'m having trouble generating audio right now. Please try again.' :
+        'I didn\'t catch that. Could you please repeat?';
+      twiml.say(fallbackText);
     }
 
     // Continue the conversation
@@ -66,6 +107,7 @@ app.post('/process-speech', async (req, res) => {
       speechTimeout: 'auto'
     });
 
+    // Use Twilio TTS for the prompt (ElevenLabs is for AI responses only)
     gather.say('What else can I help you with?');
 
   } catch (error) {
@@ -78,6 +120,24 @@ app.post('/process-speech', async (req, res) => {
 
   res.type('text/xml');
   res.send(twiml.toString());
+});
+
+// Serve generated audio files
+app.get('/audio/:audioId', (req, res) => {
+  const audioId = req.params.audioId;
+  const audioBuffer = elevenlabsService.getAudio(audioId);
+
+  if (!audioBuffer) {
+    return res.status(404).send('Audio not found or expired');
+  }
+
+  res.set({
+    'Content-Type': 'audio/mpeg',
+    'Content-Length': audioBuffer.length,
+    'Cache-Control': 'no-cache'
+  });
+
+  res.send(audioBuffer);
 });
 
 app.listen(port, () => {
