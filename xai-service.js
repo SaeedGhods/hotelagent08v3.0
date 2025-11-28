@@ -9,7 +9,7 @@ class XAIService {
   async generateResponse(message) {
     try {
       const response = await axios.post(`${this.baseURL}/chat/completions`, {
-        model: 'grok-beta',
+        model: 'grok-3',
         messages: [
           {
             role: 'system',
