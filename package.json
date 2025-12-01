@@ -1,7 +1,7 @@
 {
-  "name": "hotelagent08",
+  "name": "ai-voice-assistant",
   "version": "1.0.0",
-  "description": "",
+  "description": "General purpose AI voice assistant with natural conversation capabilities",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -10,16 +10,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SaeedGhods/hotelagent08.git"
+    "url": "git+https://github.com/SaeedGhods/hotelagent08v3.0.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/SaeedGhods/hotelagent08/issues"
+    "url": "https://github.com/SaeedGhods/hotelagent08v3.0/issues"
   },
-  "homepage": "https://github.com/SaeedGhods/hotelagent08#readme",
+  "homepage": "https://github.com/SaeedGhods/hotelagent08v3.0#readme",
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.25.1",
     "axios": "^1.13.2",

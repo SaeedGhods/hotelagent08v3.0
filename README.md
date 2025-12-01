@@ -1,6 +1,6 @@
-# AI Voice Agent
+# AI Voice Assistant
 
-A simple voice-based AI agent using Twilio and xAI that you can call via phone.
+A general-purpose voice-based AI assistant using Twilio, xAI, and ElevenLabs that you can call via phone for natural conversations on any topic.
 
 ## Setup Instructions
 
