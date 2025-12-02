@@ -7,6 +7,13 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Initialize cached greeting on startup
+async function initializeServices() {
+  await elevenlabsService.initializeGreeting();
+}
+
+initializeServices();
+
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -21,22 +28,23 @@ app.post('/voice', async (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
 
   try {
-    // Generate ElevenLabs audio for greeting - friendly and conversational
-    const greetingAudioId = await elevenlabsService.generateSpeech('Hello, this is Saeed. What would you like to talk about?');
+    // Use pre-cached greeting audio for instant response
+    const greetingAudioId = elevenlabsService.getGreetingAudioId();
     if (greetingAudioId) {
       const greetingUrl = `${req.protocol}://${req.get('host')}/audio/${greetingAudioId}`;
       twiml.play(greetingUrl);
     } else {
-      // Fallback to Twilio TTS
+      // Fallback to Twilio TTS if greeting not cached
       twiml.say('Hello, this is Saeed. What would you like to talk about?');
     }
 
-    // Gather speech input naturally
+    // Gather speech input naturally with optimized timing for faster response
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 5,
-      speechTimeout: 'auto'
+      timeout: 3, // Reduced from 5 to 3 seconds for faster processing
+      speechTimeout: 'auto',
+      speechModel: 'experimental_conversations' // Better for natural conversation
     });
 
     // No additional prompts needed - keep it natural
@@ -51,8 +59,9 @@ app.post('/voice', async (req, res) => {
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 5,
-      speechTimeout: 'auto'
+      timeout: 3,
+      speechTimeout: 'auto',
+      speechModel: 'experimental_conversations'
     });
   }
 
@@ -71,11 +80,14 @@ app.post('/process-speech', async (req, res) => {
     let audioUrl = null;
 
     if (speechResult) {
-      // Get AI response from xAI
-      const aiResponse = await xaiService.generateResponse(speechResult);
+      // Start xAI response generation (async)
+      const aiResponsePromise = xaiService.generateResponse(speechResult);
+
+      // Wait for AI response
+      const aiResponse = await aiResponsePromise;
 
       if (aiResponse) {
-        // Generate audio with ElevenLabs
+        // Generate audio with ElevenLabs (parallel processing already optimized)
         const audioId = await elevenlabsService.generateSpeech(aiResponse);
         if (audioId) {
           audioUrl = `${req.protocol}://${req.get('host')}/audio/${audioId}`;
@@ -98,8 +110,9 @@ app.post('/process-speech', async (req, res) => {
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 5,
-      speechTimeout: 'auto'
+      timeout: 3,
+      speechTimeout: 'auto',
+      speechModel: 'experimental_conversations'
     });
 
     // Keep conversation natural - no prompts needed
@@ -118,8 +131,9 @@ app.post('/process-speech', async (req, res) => {
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 5,
-      speechTimeout: 'auto'
+      timeout: 3,
+      speechTimeout: 'auto',
+      speechModel: 'experimental_conversations'
     });
   }
 
