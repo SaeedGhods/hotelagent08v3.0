@@ -39,12 +39,13 @@ app.post('/voice', async (req, res) => {
     }
 
     // Gather speech input naturally with optimized timing for faster response
+    console.log('Initial call setup - creating gather for first speech input');
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 3, // Reduced from 5 to 3 seconds for faster processing
+      timeout: 5, // Increased to 5 seconds for better user experience
       speechTimeout: 'auto',
-      speechModel: 'experimental_conversations' // Better for natural conversation
+      speechModel: 'default' // Changed to default for stability
     });
 
     // No additional prompts needed - keep it natural
@@ -78,6 +79,7 @@ app.post('/process-speech', async (req, res) => {
 
   try {
     let audioUrl = null;
+    console.log('Processing speech result, length:', speechResult ? speechResult.length : 0);
 
     if (speechResult) {
       // Start xAI response generation (async)
@@ -93,12 +95,16 @@ app.post('/process-speech', async (req, res) => {
           audioUrl = `${req.protocol}://${req.get('host')}/audio/${audioId}`;
         }
       }
+    } else {
+      console.log('No speech result received - gather timeout or silence detected');
     }
 
     if (audioUrl) {
+      console.log('Playing ElevenLabs audio:', audioUrl);
       // Play the ElevenLabs audio
       twiml.play(audioUrl);
     } else {
+      console.log('ElevenLabs failed, using Twilio TTS fallback');
       // Fallback to Twilio TTS if ElevenLabs fails
       const fallbackText = speechResult ?
         'I apologize, but I\'m having trouble generating audio right now. Please try again.' :
@@ -106,16 +112,18 @@ app.post('/process-speech', async (req, res) => {
       twiml.say(fallbackText);
     }
 
-    // Continue the conversation naturally
+    // Continue the conversation naturally - gather speech input immediately after audio
+    console.log('Creating gather for continued conversation');
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 3,
+      timeout: 5, // Increased from 3 to 5 seconds for better user experience
       speechTimeout: 'auto',
-      speechModel: 'experimental_conversations'
+      speechModel: 'default' // Changed from experimental_conversations to default for stability
     });
 
     // Keep conversation natural - no prompts needed
+    console.log('TwiML response prepared, sending back to Twilio');
 
   } catch (error) {
     console.error('Error processing speech:', error);
@@ -131,9 +139,9 @@ app.post('/process-speech', async (req, res) => {
     const gather = twiml.gather({
       input: 'speech',
       action: '/process-speech',
-      timeout: 3,
+      timeout: 5,
       speechTimeout: 'auto',
-      speechModel: 'experimental_conversations'
+      speechModel: 'default'
     });
   }
 
