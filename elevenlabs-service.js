@@ -24,12 +24,12 @@ class ElevenLabsService {
 
       const response = await axios.post(`${this.baseURL}/text-to-speech/${voiceId}`, {
         text: text,
-        model_id: 'eleven_monolingual_v1',
+        model_id: 'eleven_flash_v2',
         output_format: 'mp3_22050_32',
         voice_settings: {
-          stability: 0.6,
+          stability: 0.5,
           similarity_boost: 0.8,
-          style: 0.5,
+          style: 0.0,
           use_speaker_boost: true
         }
       }, {
